@@ -1,0 +1,15 @@
+env/
+venv/
+__pycache__/
+*.pyc
+
+# Distribution / packaging
+.Python
+build/
+dist/
+develop-eggs/
+eggs/
+*.egg-info/
+.installed.cfg
+*.manifest
+*.spec
