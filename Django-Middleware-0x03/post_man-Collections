@@ -1,0 +1,2 @@
+Key: Authorization
+Value: Bearer your_jwt_access_token
