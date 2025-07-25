@@ -5,12 +5,20 @@ from .models import Message
 from .serializers import ConversationSerializer
 from .serializers import MessageSerializer
 from rest_framework.decorators import action
-
+from .permissions import IsParticipant, IsSender
+from .filters import MessageFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
+    permission_classes = [IsParticipant]
     serializer_class = ConversationSerializer
+    
+
+    def get_queryset(self):
+        return Conversation.objects.filter(participants=self.request.user)
+
 
     def create(self, request, *args, **kwargs):
         participants = request.data.get('participants', [])
@@ -23,7 +31,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
+    permission_classes = [IsSender]
     serializer_class = MessageSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = MessageFilter
+
+    def get_queryset(self):
+        return Message.objects.filter(conversation__participants=self.request.user)
+
 
     def create(self, request, *args, **kwargs):
         conversation_id = request.data.get('conversation')
