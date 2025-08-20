@@ -1,0 +1,57 @@
+# This workflow's name will appear on the GitHub Actions page
+name: Django CI
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      # Use a MySQL service for the database
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        # A simple health check to ensure MySQL is ready
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install dependencies, including mysqlclient for the database connection
+          pip install -r requirements.txt
+
+      - name: Wait for MySQL
+        # Use a simple sleep command to ensure the database is fully ready
+        run: sleep 10
+
+      - name: Run Django tests
+        env:
+          # Set up Django environment variables for testing
+          # The service name "mysql" is how you access the database from the runner
+          DATABASE_URL: "mysql://root:${{ secrets.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/test_db"
+        run: |
+          python manage.py makemigrations
+          python manage.py migrate
+          python manage.py test
